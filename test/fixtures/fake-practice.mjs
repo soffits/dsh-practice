@@ -10,7 +10,7 @@ if (process.env.FAKE_PRACTICE_FAIL) {
   process.exit(1)
 }
 const value = flag => { const i = argv.indexOf(flag); return i < 0 ? undefined : argv[i + 1] }
-const rest = argv.filter((word, i) => !word.startsWith('--') && !(i > 0 && ['--learner', '--lang', '--limit', '--minutes', '--session', '--item', '--task', '--variant', '--audio', '--text-file', '--correct', '--total', '--focus', '--lesson-item'].includes(argv[i - 1])))
+const rest = argv.filter((word, i) => !word.startsWith('--') && !(i > 0 && ['--learner', '--lang', '--limit', '--minutes', '--session', '--item', '--task', '--variant', '--audio', '--text-file', '--correct', '--total', '--focus', '--lesson-item', '--recent'].includes(argv[i - 1])))
 const [command, action, third] = rest
 const lang = value('--lang') ?? 'en'
 const out = body => process.stdout.write(`${JSON.stringify(body)}\n`)
@@ -18,12 +18,18 @@ const sleep = ms => new Promise(done => setTimeout(done, ms))
 const attempt = id => ({ id, session: 's1', item: 'i1', skill: 'speaking', task: 'celpip.speaking.1', variant: 'full', kind: 'voice', created: '2026-01-01T00:00:00+00:00', minutes: 2, prompt: null, metrics: { speech_rate_wpm: 120 }, errors: [], speech: { status: 'ok' }, answer_text: 'hello', feedback: null, speech_summary: 'Clear.', folder: `${process.env.PRACTICE_ROOT}/${value('--learner')}/${lang}/attempts/${id}` })
 const session = { id: 's1', lang, status: 'open', started: '2026-01-01T00:00:00+00:00', plan: { items: [{ id: 'i1', kind: 'task', task: 'celpip.speaking.1', skill: 'speaking', name: 'Giving Advice', state: 'todo', prep_s: 30, response_s: 90 }] }, attempts: ['s1-a1'], cards_reviewed: 0 }
 switch (command) {
+  case 'overview': {
+    const chosen = ['en', 'fr'].includes(value('--lang')) ? value('--lang') : 'en'
+    const open = !process.env.FAKE_PRACTICE_NO_SESSION
+    out({ languages: ['en', 'fr'], lang: chosen, status: { lang: chosen, open_sessions: open ? ['s1'] : [], cards: { due_now: 2 }, speaking_debt: { owed: true } }, session: open ? { ...session, lang: chosen } : null, plan: open ? null : { lang: chosen, minutes_available: 20, items: [{ id: 'i1', kind: 'task', task: 'celpip.speaking.1' }] }, attempts: open ? [{ ...attempt('s1-a1'), speech: { status: process.env.FAKE_PRACTICE_PENDING ? 'pending' : 'ok' } }] : [] })
+    break
+  }
   case 'facts': out({ languages: { en: { sessions_finished: 1 }, fr: { sessions_finished: 0 } } }); break
   case 'status': out({ lang, open_sessions: process.env.FAKE_PRACTICE_NO_SESSION ? [] : ['s1'], cards: { due_now: 2 }, speaking_debt: { owed: true } }); break
   case 'plan': out({ lang, minutes_available: Number(value('--minutes') ?? 20), items: [{ id: 'i1', kind: 'task', task: 'celpip.speaking.1' }] }); break
   case 'session': out(action === 'list' ? { sessions: [{ id: 's0' }, { id: 's1' }] } : { ...session, status: action === 'finish' ? 'finished' : 'open' }); break
   case 'review': out(action === 'due' ? { lang, due_total: 1, shown: 1, cards: [{ id: 'c-abc123', kind: 'cloze', prompt: 'a ____ b', answer: 'x' }] } : { graded: [{ card: third, rating: 'good' }], due_remaining: 0 }); break
-  case 'progress': out({ lang, skills: {}, sounds: [] }); break
+  case 'progress': out({ lang, skills: {}, sounds: [], ...(value('--recent') ? { facts: { sessions_finished: 1 }, recent: { sessions: Array.from({ length: 7 }, (_, i) => ({ id: `s${7 - i}` })), attempts: [attempt('s1-a2'), attempt('s1-a1')] } } : {}) }); break
   case 'lesson':
     if (action === 'list') out({ status: { stage: 'foundations', lessons_done: 1, lessons_total: 2, next_lesson: 'fr.a.2', units: [] }, lessons: [{ id: 'fr.a.1', unit: 'a', title: 'One', minutes: 6, done: true }, { id: 'fr.a.2', unit: 'a', title: 'Two', minutes: 6, done: false }] })
     else if (action === 'show') out({ id: third ?? 'fr.a.2', title: 'Two', minutes: 6, explain: 'Short.', items: [{ id: '1', say: 'ma', show: 'ma', gloss: '', hint: '', pair: null, drill: [], audio: [{ text: 'ma', file: 'audio/0123456789ab.mp3', slow_file: null }] }], cards: 2, times_done: 0, audio_status: { status: 'ok' } })
