@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- Lessons for beginners: a Lessons view (when the language has foundations lessons in the practice tool) and the next lesson as a task of today's session. Each lesson has its explanation, every item with normal and slow example audio, the whole lesson as one listen-and-repeat file, recording of a repeat per item or for all items with read-aloud feedback marked as a low-reliability hint, and a button to mark it done.
+- Review cards with audio: hear, say aloud, number dictation, which-of-two for minimal pairs, and words with an example sentence, with play buttons; new words are marked.
+- Example audio is served from the learner's own audio folder with byte ranges and long caching.
+
 ## 0.1.3
 
 - `@deepseek-ai/schemastery` is a peer dependency (DSH provides it) instead of a pinned dependency, so a package manager no longer moves a private copy of it when versions change under a running DSH, which stopped the plugin from loading after an in-place update.

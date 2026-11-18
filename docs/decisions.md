@@ -27,3 +27,7 @@ The CLI's plan has the task's name, hint and timers, not its prompt text, which 
 ## Points
 
 The page never computes or shows scores or penalties: finishing a session calls the CLI once, and the page shows the ledger's answer.
+
+## Lessons and example audio (2026-11)
+
+A lesson body is one component (`web/lesson.js`) used both as a task of the open session and as a page of the Lessons view, so there is one place that knows how a lesson looks. The page asks `lesson show` and renders what the command says (text, clip paths, the last repeats); it keeps no lesson data. Example clips are served by `GET /api/practice/audio?lang&file` from the learner's own `<lang>/audio/` folder only: the name must match the tool's content-hash pattern, so no path outside that folder can be asked for, and the clips are cached for good because their names change when their content does. Play buttons never start by themselves except the first clip of a card the learner just opened; one clip plays at a time. A repeat is recorded per item or for the whole lesson, sent with the lesson id and item ids (`attempt add --lesson`), analysed in the same detached job as other recordings, and shown under the lesson as words recognised plus the sounds that differed, always with the note that feedback on a language the speech tool has not calibrated is only a hint. Marking a lesson done is its own button, since the page cannot know whether the lesson was really worked through.
