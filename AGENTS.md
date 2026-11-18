@@ -13,5 +13,5 @@ Dependencies: whatever DSH itself ships (`@deepseek-ai/schemastery`) is a peer d
 
 Folders: `dataDir/jobs` and the practice root are created when missing and watched again if they are removed while the plugin runs (`changes.ensure`, called before a job folder is made and when a page connects; a watcher on a removed folder never fires again, so it is replaced, not kept).
 
-Route names: `/api/practice/strings` answered an empty 400 in an early build and the route was named `words`. It is not a reserved name in DSH (other plugins serve `/api/<name>/strings` on the same DSH, and nothing in the connection or web server layer names it); the web server turns any error thrown inside a route handler into an empty 400, which is what an unfinished handler did. `words` stays, since the client calls it.
+Route names: `/api/practice/strings` answered an empty 400 in an early build and the route was named `words`. It is not a reserved name in DSH (other plugins serve `/api/<name>/strings` on the same DSH, and nothing in the connection or web server layer names it); the web server turns any error thrown inside a route handler into an empty 400, so a bug in that early build's handler is the likely cause (not reproduced, the build is gone). `words` stays, since the client calls it.
 

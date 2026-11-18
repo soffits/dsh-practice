@@ -10,7 +10,7 @@ if (process.env.FAKE_PRACTICE_FAIL) {
   process.exit(1)
 }
 const value = flag => { const i = argv.indexOf(flag); return i < 0 ? undefined : argv[i + 1] }
-const rest = argv.filter((word, i) => !word.startsWith('--') && !(i > 0 && ['--learner', '--lang', '--limit', '--minutes', '--session', '--item', '--task', '--variant', '--audio', '--text-file', '--correct', '--total', '--focus'].includes(argv[i - 1])))
+const rest = argv.filter((word, i) => !word.startsWith('--') && !(i > 0 && ['--learner', '--lang', '--limit', '--minutes', '--session', '--item', '--task', '--variant', '--audio', '--text-file', '--correct', '--total', '--focus', '--lesson-item'].includes(argv[i - 1])))
 const [command, action, third] = rest
 const lang = value('--lang') ?? 'en'
 const out = body => process.stdout.write(`${JSON.stringify(body)}\n`)
@@ -24,6 +24,12 @@ switch (command) {
   case 'session': out(action === 'list' ? { sessions: [{ id: 's0' }, { id: 's1' }] } : { ...session, status: action === 'finish' ? 'finished' : 'open' }); break
   case 'review': out(action === 'due' ? { lang, due_total: 1, shown: 1, cards: [{ id: 'c-abc123', kind: 'cloze', prompt: 'a ____ b', answer: 'x' }] } : { graded: [{ card: third, rating: 'good' }], due_remaining: 0 }); break
   case 'progress': out({ lang, skills: {}, sounds: [] }); break
+  case 'lesson':
+    if (action === 'list') out({ status: { stage: 'foundations', lessons_done: 1, lessons_total: 2, next_lesson: 'fr.a.2', units: [] }, lessons: [{ id: 'fr.a.1', unit: 'a', title: 'One', minutes: 6, done: true }, { id: 'fr.a.2', unit: 'a', title: 'Two', minutes: 6, done: false }] })
+    else if (action === 'show') out({ id: third ?? 'fr.a.2', title: 'Two', minutes: 6, explain: 'Short.', items: [{ id: '1', say: 'ma', show: 'ma', gloss: '', hint: '', pair: null, drill: [], audio: [{ text: 'ma', file: 'audio/0123456789ab.mp3', slow_file: null }] }], cards: 2, times_done: 0, audio_status: { status: 'ok' } })
+    else if (action === 'audio') out({ lesson: third, file: 'audio/listen-0123abcd.mp3', path: '/x', seconds: 12 })
+    else out({ lesson: third, cards_added: 3, cards_due_from: '2026-01-02T05:00:00+00:00' })
+    break
   case 'attempt':
     if (action === 'list') out({ attempts: [{ id: 's1-a1' }, { id: 's1-a2' }] })
     else if (action === 'show') out(attempt(third))

@@ -9,7 +9,7 @@ import { readdir, rename, rm, stat } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { ATTEMPT, ITEM, LANG, SESSION, TASK, checked, fail, json, numeric } from './http.js'
+import { ATTEMPT, ITEM, LANG, LESSON, LESSON_ITEMS, SESSION, TASK, checked, fail, json, numeric } from './http.js'
 
 /** What MediaRecorder produces in each browser, by media type; the extension is what `practice` and ffmpeg see. */
 export const CLIP_TYPES = Object.freeze({
@@ -60,7 +60,8 @@ function capped(limit) {
 }
 
 /**
- * POST /api/practice/attempt/audio?lang&session&item&task&variant&minutes, body: the clip.
+ * POST /api/practice/attempt/audio?lang&session&item&task&variant&minutes&lesson&lesson_items, body: the clip
+ * (`lesson` makes it a repeat-after-me of a foundations lesson, `lesson_items` the item ids that were repeated).
  * @param {object} o
  * @param {ReturnType<import('./jobs.js').createJobs>} o.jobs
  * @param {number} o.maxBytes
@@ -75,11 +76,11 @@ export function uploadRoute({ jobs, maxBytes, env = process.env }) {
     if (extension === undefined) throw fail(415, `Cannot take ${type || 'that'} audio.`)
     const args = ['--lang', lang, 'attempt', 'add']
     const meta = { kind: 'attempt', learner: viewer.learner, lang }
-    for (const [key, pattern] of [['session', SESSION], ['item', ITEM], ['task', TASK]]) {
+    for (const [key, pattern, flag] of [['session', SESSION], ['item', ITEM], ['task', TASK], ['lesson', LESSON], ['lesson_items', LESSON_ITEMS, 'lesson-item']]) {
       const value = query.get(key)
       if (value === null || value === '') continue
       checked(value, pattern, key)
-      args.push(`--${key}`, value)
+      args.push(`--${flag ?? key}`, value)
       meta[key] = value
     }
     const variant = query.get('variant')
@@ -107,7 +108,20 @@ export function uploadRoute({ jobs, maxBytes, env = process.env }) {
   }
 }
 
-/** GET /api/practice/attempt/audio?lang&id: the clip kept with an attempt, to its owner only. */
+/** A file answered whole or by byte range; Safari will not play audio without ranges. */
+async function serve(path, type, request, cache) {
+  const { size } = await stat(path)
+  const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '')
+  const common = { 'content-type': type, 'accept-ranges': 'bytes', 'cache-control': cache, 'x-content-type-options': 'nosniff' }
+  if (range === null) return new Response(Readable.toWeb(createReadStream(path)), { status: 200, headers: { ...common, 'content-length': String(size) } })
+  let start = range[1] === '' ? Math.max(0, size - Number(range[2])) : Number(range[1])
+  const end = range[1] === '' || range[2] === '' ? size - 1 : Math.min(Number(range[2]), size - 1)
+  if (!(start <= end) || start >= size) return new Response(null, { status: 416, headers: { 'content-range': `bytes */${size}` } })
+  start = Math.max(0, start)
+  return new Response(Readable.toWeb(createReadStream(path, { start, end })), { status: 206, headers: { ...common, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': String(end - start + 1) } })
+}
+
+/** GET /api/practice/attempt/clip?lang&id: the clip kept with an attempt, to its owner only. */
 export function playRoute({ practice }) {
   return async (request, viewer) => {
     const query = new URL(request.url).searchParams
@@ -119,17 +133,21 @@ export function playRoute({ practice }) {
     if (!folder.startsWith(owned)) throw fail(404, 'No recording.')
     const name = (await readdir(folder).catch(() => [])).find(file => /^audio\.[a-z0-9]+$/.test(file) && PLAY_TYPES[file.slice(5)] !== undefined)
     if (name === undefined) throw fail(404, 'No recording was kept for this attempt.')
-    const path = join(folder, name)
-    const { size } = await stat(path)
-    const type = PLAY_TYPES[name.slice(5)]
-    const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '')
-    const common = { 'content-type': type, 'accept-ranges': 'bytes', 'cache-control': 'private, max-age=300', 'x-content-type-options': 'nosniff' }
-    if (range === null) return new Response(Readable.toWeb(createReadStream(path)), { status: 200, headers: { ...common, 'content-length': String(size) } })
-    let start = range[1] === '' ? Math.max(0, size - Number(range[2])) : Number(range[1])
-    const end = range[1] === '' || range[2] === '' ? size - 1 : Math.min(Number(range[2]), size - 1)
-    if (!(start <= end) || start >= size) return new Response(null, { status: 416, headers: { 'content-range': `bytes */${size}` } })
-    start = Math.max(0, start)
-    return new Response(Readable.toWeb(createReadStream(path, { start, end })), { status: 206, headers: { ...common, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': String(end - start + 1) } })
+    return serve(join(folder, name), PLAY_TYPES[name.slice(5)], request, 'private, max-age=300')
   }
 }
 
+/** The example audio the practice tool made: `audio/<hash>.<ext>` or `audio/listen-<hash>.<ext>` in a language folder. */
+const EXAMPLE_CLIP = /^audio\/(?:[0-9a-f]{12}|listen-[0-9a-f]{8})\.(mp3|ogg|wav|m4a)$/
+
+/** GET /api/practice/audio?lang&file: an example clip (named by content, so it can be cached for good), to its learner only. */
+export function exampleRoute({ practice }) {
+  return async (request, viewer) => {
+    const query = new URL(request.url).searchParams
+    const lang = checked(query.get('lang'), LANG, 'lang')
+    const file = checked(query.get('file'), EXAMPLE_CLIP, 'file')
+    const path = join(practice.root, viewer.learner, lang, file)
+    if (!(await stat(path).then(info => info.isFile(), () => false))) throw fail(404, 'No such clip.')
+    return serve(path, PLAY_TYPES[`.${file.split('.').at(-1)}`], request, 'private, max-age=31536000, immutable')
+  }
+}

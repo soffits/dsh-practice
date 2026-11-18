@@ -1,17 +1,45 @@
 /** Due review cards, one at a time: see the prompt, say or type the answer, look, grade. */
 import { read, write } from './api.js'
+import { Clip, PlayButton } from './player.js'
 import { Btn, Empty, h, K, Problem, React, useEffect, useRef, useState } from './ui.js'
 
 const RATINGS = ['again', 'hard', 'good', 'easy']
+/** Cards the learner judges for herself: there is nothing to type. */
+const SELF_GRADED = ['hear', 'say', 'pick', 'recognise']
 
-function Face({ card, revealed, t }) {
+const LISTEN_PROMPTED = ['hear', 'dictate', 'pick']
+
+/** The example sentence of a word card, with its own clip. */
+function Example({ example, lang, t }) {
+  return h('div', { className: 'pr-example' },
+    h('span', { className: 'pr-exampleText' }, h('span', { lang }, example.text), example.gloss && h('span', { className: 'pr-note' }, example.gloss)),
+    h(PlayButton, { lang, file: example.file, text: example.text, label: t('review.play') }))
+}
+
+function Face({ card, revealed, t, lang, picked, onPick }) {
+  const audio = card.audio
+  const instruction = LISTEN_PROMPTED.includes(card.mode) ? t(`review.prompt.${card.mode}`) : null
+  const wrong = picked !== null && picked !== card.answer
   return h('div', { className: 'pr-card' },
-    h('div', { className: 'pr-cardMeta' }, card.category && h(K.Chip, { tone: 'muted' }, card.category), card.occurrences > 1 && h(K.Chip, { tone: 'warn' }, t('review.seen', { n: card.occurrences }))),
-    h('p', { className: 'pr-cardPrompt' }, card.prompt),
+    h('div', { className: 'pr-cardMeta' },
+      card.new && h(K.Chip, { tone: 'accent' }, t('review.new')),
+      card.mode && h(K.Chip, { tone: 'muted' }, t(`review.mode.${card.mode}`)),
+      !card.mode && card.category && h(K.Chip, { tone: 'muted' }, card.category),
+      card.occurrences > 1 && !card.mode && h(K.Chip, { tone: 'warn' }, t('review.seen', { n: card.occurrences }))),
+    instruction ? h('p', { className: 'pr-cardInstruction' }, instruction) : h('p', { className: 'pr-cardPrompt', lang: card.mode === 'recognise' ? lang : undefined }, card.prompt),
+    audio && audio.side === 'front' && h('div', { className: 'pr-cardAudio' }, h(Clip, { key: card.id, lang, audio: { ...audio, file: audio.file }, t, big: true })),
+    card.choices && h('div', { className: 'pr-choices', role: 'group', 'aria-label': t('review.prompt.pick') }, card.choices.map(choice => h(Btn, {
+      key: choice, variant: picked === choice ? (choice === card.answer ? 'primary' : 'outline') : 'outline', size: 'md', className: 'pr-choice',
+      disabled: picked !== null, 'data-right': picked !== null && choice === card.answer ? 'true' : undefined, lang, onClick: () => onPick(choice),
+    }, choice))),
     card.hint && h('p', { className: 'pr-note' }, card.hint),
     revealed && h('div', { className: 'pr-cardAnswer' },
-      h('p', { className: 'pr-cardAnswerText' }, card.answer),
-      card.full && card.full !== card.answer && h('p', { className: 'pr-note' }, card.full),
+      audio && audio.side === 'back' && h('div', { className: 'pr-cardAudio' }, h(Clip, { key: `${card.id}-back`, lang, audio, t, big: true })),
+      picked !== null && h('p', { className: 'pr-note', role: 'status' }, t(wrong ? 'review.wrongPick' : 'review.rightPick')),
+      h('p', { className: 'pr-cardAnswerText', lang: card.mode && card.mode !== 'recognise' ? lang : undefined }, card.answer),
+      card.mode === 'hear' && card.gloss && h('p', { className: 'pr-note' }, card.gloss),
+      !card.mode && card.full && card.full !== card.answer && h('p', { className: 'pr-note' }, card.full),
+      card.example && h(Example, { example: card.example, lang, t }),
       card.you_wrote && h('p', { className: 'pr-note' }, t('review.youWrote', { text: card.you_wrote }))))
 }
 
@@ -26,6 +54,7 @@ export function Review({ lang, session, version, t }) {
   const [gone, setGone] = useState(() => new Set())
   const [revealed, setRevealed] = useState(false)
   const [typed, setTyped] = useState('')
+  const [picked, setPicked] = useState(null)
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState(null)
   const [round, setRound] = useState({ done: 0, total: 0 })
@@ -55,6 +84,7 @@ export function Review({ lang, session, version, t }) {
       setRound(previous => ({ ...previous, done: previous.done + 1 }))
       setRevealed(false)
       setTyped('')
+      setPicked(null)
     } catch (error) {
       setProblem(error.message)
     } finally {
@@ -80,9 +110,9 @@ export function Review({ lang, session, version, t }) {
     h('div', { className: 'pr-reviewHead' },
       h('span', { className: 'pr-meta' }, t('review.progress', { done: round.done, total: round.total })),
       h(K.Progress, { value: round.done, max: Math.max(1, round.total), tone: 'accent', label: t('review.progress', { done: round.done, total: round.total }) })),
-    h(Face, { card, revealed, t }),
-    !revealed && h('input', { ref: field, className: 'pr-input', value: typed, placeholder: t('review.typePlaceholder'), 'aria-label': t('review.typePlaceholder'), onChange: event => setTyped(event.target.value), onKeyDown: event => { if (event.key === 'Enter') { event.preventDefault(); setRevealed(true) } } }),
-    !revealed && h('div', { className: 'pr-controls' }, h(Btn, { variant: 'primary', size: 'md', onClick: () => setRevealed(true) }, t('review.show'))),
+    h(Face, { card, revealed, t, lang, picked, onPick: choice => { setPicked(choice); setTyped(choice); setRevealed(true) } }),
+    !revealed && !SELF_GRADED.includes(card.mode) && h('input', { ref: field, className: 'pr-input', value: typed, placeholder: t('review.typePlaceholder'), 'aria-label': t('review.typePlaceholder'), onChange: event => setTyped(event.target.value), onKeyDown: event => { if (event.key === 'Enter') { event.preventDefault(); setRevealed(true) } } }),
+    !revealed && !card.choices && h('div', { className: 'pr-controls' }, h(Btn, { variant: 'primary', size: 'md', onClick: () => setRevealed(true) }, t('review.show'))),
     revealed && h('div', { className: 'pr-rate', role: 'group', 'aria-label': t('review.rate') },
       RATINGS.map((rating, i) => h(Btn, { key: rating, variant: rating === 'good' ? 'primary' : 'outline', size: 'md', disabled: busy, className: `pr-rateBtn pr-rate-${rating}`, onClick: () => grade(rating) },
         h('span', null, t(`review.${rating}`)), h('kbd', null, i + 1)))),

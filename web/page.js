@@ -1,12 +1,13 @@
 /** The practice page: header, language and view switches, and the one state every view reads. It re-reads whenever the change stream says the data moved. */
 import { read } from './api.js'
 import { Today, Finished } from './today.js'
+import { Lessons } from './lesson.js'
 import { Review } from './review.js'
 import { Progress } from './progress.js'
 import { ask, Btn, canAsk, Empty, Glyph, h, K, P, Problem, React, useCallback, useEffect, useState } from './ui.js'
 
 const LANG_KEY = 'dsh-practice:lang'
-const VIEWS = ['today', 'review', 'progress']
+const VIEWS = ['today', 'lessons', 'review', 'progress']
 
 const storedLang = () => { try { return localStorage.getItem(LANG_KEY) ?? undefined } catch { return undefined } }
 const rememberLang = lang => { try { localStorage.setItem(LANG_KEY, lang) } catch { /* private mode */ } }
@@ -44,7 +45,8 @@ export function Page({ t, initialView }) {
   const choose = value => { rememberLang(value); setLang(value); setFinished(null) }
   const ready = data?.lang && data.learner?.exists
   const due = data?.status?.cards?.due_today ?? 0
-  const tabs = VIEWS.map(id => ({
+  const shownViews = VIEWS.filter(id => id !== 'lessons' || data?.status?.foundations)
+  const tabs = shownViews.map(id => ({
     value: id, id: `pr-tab-${id}`, panelId: 'pr-panel',
     label: h(React.Fragment, null, t(`view.${id}`), id === 'review' && due > 0 && h('span', { className: 'pr-tabCount' }, due)),
   }))
@@ -64,6 +66,7 @@ export function Page({ t, initialView }) {
         ready && view === 'today' && h(React.Fragment, null,
           finished && h(Finished, { session: finished, t, onClose: () => setFinished(null) }),
           h(Today, { data, t, reload: bump, goReview: () => setView('review'), onFinished: session => { setFinished(session); bump() } })),
+        ready && view === 'lessons' && h(Lessons, { lang: data.lang, version, t }),
         ready && view === 'review' && h(Review, { lang: data.lang, session: data.session?.id ?? null, version, t }),
         ready && view === 'progress' && h(Progress, { lang: data.lang, learner: data.learner.id, version, t }))))
 }

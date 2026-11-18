@@ -1,20 +1,22 @@
 /** One plan item of the open session: its header and, when opened, the panel that fits how it is answered. */
 import { AttemptCard } from './attempt.js'
 import { ObjectivePanel, OtherPanel, WritingPanel } from './answer.js'
+import { LessonPanel } from './lesson.js'
 import { SpeakingPanel } from './speaking.js'
 import { Glyph, P, SkillTile, h, K } from './ui.js'
 
 /** The panel for an item by how it is answered. */
 function Panel(props) {
   const { item } = props
+  if (item.kind === 'lesson') return h(LessonPanel, props)
   if (item.kind === 'task' && item.answer === 'voice') return h(SpeakingPanel, props)
   if (item.kind === 'task' && item.answer === 'text') return h(WritingPanel, props)
   if (item.kind === 'task' && item.answer === 'objective') return h(ObjectivePanel, props)
   return h(OtherPanel, props)
 }
 
-export const itemTitle = (item, t) => item.name ?? (item.kind === 'review' ? t('item.review') : item.kind === 'drill' ? t('item.drill') : item.task ?? item.kind)
-export const itemSkill = item => item.skill ?? (item.kind === 'review' ? 'review' : null)
+export const itemTitle = (item, t) => item.name ?? (item.kind === 'review' ? t(item.new ? 'item.reviewNew' : 'item.review', { n: item.new }) : item.kind === 'drill' ? t('item.drill') : item.task ?? item.kind)
+export const itemSkill = item => item.skill ?? (item.kind === 'review' ? 'review' : item.kind === 'lesson' ? 'lesson' : null)
 
 /**
  * @param {object} o

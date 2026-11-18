@@ -132,6 +132,38 @@
 .pr-trendSame{grid-column:1/-1;margin-top:-2px}
 .pr-sound,.pr-errorRow,.pr-sessionRow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 12px;border-radius:10px;background:var(--dsw-alias-bg-base)}
 .pr-ipa{font-size:15px;font-weight:500}
+/* foundations lessons and example audio */
+.pr-lesson{display:flex;flex-direction:column;gap:14px}
+.pr-lessonHead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.pr-lessonHead h3{flex:1;min-width:0;margin:0;font-size:16px;line-height:24px;font-weight:500}
+.pr-explain{line-height:1.75}
+.pr-lessonItems{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.pr-lessonItem{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;padding:10px 12px;border:.5px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-base)}
+.pr-itemText{display:flex;flex-direction:column;min-width:0;flex:1 1 200px}
+.pr-itemShow{font-size:20px;line-height:28px;font-weight:500}
+.pr-itemGloss{color:var(--dsw-alias-label-secondary)}
+.pr-itemActions,.pr-clip{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.pr-clipBig{gap:10px}
+.pr-repeats h4{margin:0 0 6px;font-size:13px;font-weight:500;color:var(--dsw-alias-label-secondary)}
+.pr-repeatList{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.pr-repeat{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:var(--dsw-alias-bg-base)}
+.pr-repeatHead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.pr-flagged{margin:0;padding-left:18px}
+.pr-lessons{display:flex;flex-direction:column;gap:20px}
+.pr-units{display:flex;flex-direction:column;gap:14px}
+.pr-unit h3{margin:0 0 6px;font-size:13.5px;font-weight:500}
+.pr-lessonList{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.pr-lessonRow{display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:9px 12px;border:.5px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-base);color:inherit;font:inherit;text-align:left;cursor:pointer}
+.pr-lessonRow[data-current]{border-color:var(--dsw-alias-state-business-primary)}
+.pr-lessonRowTitle{flex:1;min-width:0}
+@media (hover:hover){.pr-lessonRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}
+.pr-cardInstruction{margin:0;font-size:16px;line-height:1.5;color:var(--dsw-alias-label-secondary)}
+.pr-cardAudio{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
+.pr-choices{display:flex;flex-wrap:wrap;gap:10px}
+.pr-choice{min-width:132px;font-size:20px}
+.pr-choice[data-right]{border-color:var(--dsw-alias-state-success-primary)!important}
+.pr-example{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--dsw-alias-bg-base)}
+.pr-exampleText{display:flex;flex-direction:column;min-width:0;flex:1 1 180px}
 /* chrome is not selectable; answers, prompts and feedback are */
 .pr-head,.pr-taskHead,.pr-chips,.pr-signal dt,.pr-statLabel,.pr-dial,.pr-tabCount,.pr-rateBtn,.pr-meta{-webkit-user-select:none;user-select:none}
 .pr-page svg{-webkit-user-drag:none}
@@ -151,6 +183,10 @@
 .pr-finishBar .pr-minutesField{flex:1}
 .pr-minutesField input{width:100%}
 .pr-cardPrompt,.pr-cardAnswerText{font-size:18px}
+.pr-itemShow{font-size:18px}
+.pr-itemActions{width:100%}
+.pr-itemActions>*{flex:1 1 auto}
+.pr-choice{flex:1 1 40%}
 .pr-finished{flex-wrap:wrap}
 }
 @media (width<=760px),(pointer:coarse){.pr-page button:not(.pr-taskHead){min-height:40px}.pr-minutes button{min-height:40px}}

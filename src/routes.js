@@ -7,13 +7,18 @@
  *   GET  /api/practice/plan?lang=&minutes=  today's plan for a time budget
  *   GET  /api/practice/review?lang=       due cards, with answers (the page hides them until asked)
  *   GET  /api/practice/progress?lang=     progress, facts, recent sessions and attempts
+ *   GET  /api/practice/lessons?lang=      the foundations lessons with their state (`lesson list`)
+ *   GET  /api/practice/lesson?lang=&id=   one lesson with its items and clips (`lesson show`; the next lesson without an id)
+ *   GET  /api/practice/lesson/listen?lang=&id=  the lesson as one listen-and-repeat file: { file }
+ *   POST /api/practice/lesson/done        { lang, lesson, session?, minutes? }
+ *   GET  /api/practice/audio?lang=&file=  an example clip from the practice tool, with byte ranges
  *   POST /api/practice/session/start      { lang, minutes?, focus? }
  *   POST /api/practice/session/finish     { lang, session, minutes? }
  *   POST /api/practice/session/abandon    { lang, session }
  *   POST /api/practice/review/grade       { lang, session?, grades: [{ card, rating, answer? }] }
  *   POST /api/practice/attempt/text       { lang, session?, item?, task, variant?, text, minutes? }
  *   POST /api/practice/attempt/objective  { lang, session?, item?, task, variant?, correct, total, minutes? }
- *   POST /api/practice/attempt/audio      query + the clip as the body: starts a job, answers { job }
+ *   POST /api/practice/attempt/audio      query (lang, session, item, task, variant, minutes, lesson, lesson_items) + the clip as the body: starts a job, answers { job }
  *   POST /api/practice/attempt/analyze    { lang, attempt }: analysis again, as a job
  *   GET  /api/practice/attempt/clip       ?lang&id: the stored clip, with byte ranges
  *   POST /api/practice/job/dismiss        { id }
@@ -21,8 +26,8 @@
  *   GET  /api/practice/words              the page's words by language tag
  */
 import { personHash } from './jobs.js'
-import { playRoute, uploadRoute } from './audio.js'
-import { ATTEMPT, CARD, ITEM, LANG, RATINGS, SESSION, TASK, body, checked, fail, get, guard, json, numeric, post } from './http.js'
+import { exampleRoute, playRoute, uploadRoute } from './audio.js'
+import { ATTEMPT, CARD, ITEM, LANG, LESSON, RATINGS, SESSION, TASK, body, checked, fail, get, guard, json, numeric, post } from './http.js'
 
 export const PREFIX = '/api/practice'
 const HEARTBEAT_MS = 25 * 1000
@@ -90,6 +95,27 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
     const running = (await jobs.list(viewer.person)).some(job => job.lang === lang && job.state === 'running')
     const recent = await attemptsOf(viewer, lang, listed.attempts.slice(-RECENT_ATTEMPTS).reverse().map(attempt => attempt.id), running)
     return json(200, { progress: overall, facts: facts.languages?.[lang] ?? null, sessions: sessions.sessions.slice(-5).reverse(), recent })
+  })
+
+  const lessons = secured(async (request, viewer) => json(200, await call(viewer, langOf(request), ['lesson', 'list'])))
+
+  const lesson = secured(async (request, viewer) => {
+    const id = new URL(request.url).searchParams.get('id')
+    return json(200, await call(viewer, langOf(request), ['lesson', 'show', ...(id ? [checked(id, LESSON, 'id')] : [])]))
+  })
+
+  const listen = secured(async (request, viewer) => {
+    const track = await call(viewer, langOf(request), ['lesson', 'audio', checked(new URL(request.url).searchParams.get('id'), LESSON, 'id')])
+    return json(200, { lesson: track.lesson, file: track.file, seconds: track.seconds })
+  })
+
+  const lessonDone = secured(async (request, viewer) => {
+    const value = await body(request)
+    const minutes = numeric(value.minutes, 'minutes', { max: 600 })
+    const args = ['lesson', 'done', checked(value.lesson, LESSON, 'lesson')]
+    if (value.session) args.push('--session', checked(value.session, SESSION, 'session'))
+    if (minutes) args.push('--minutes', minutes)
+    return json(200, await call(viewer, checked(value.lang, LANG, 'lang'), args))
   })
 
   const start = secured(async (request, viewer) => {
@@ -162,6 +188,7 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
 
   const upload = secured(uploadRoute({ jobs, maxBytes: maxClipBytes, env: practice.env }))
   const play = secured(playRoute({ practice }))
+  const example = secured(exampleRoute({ practice }))
 
   const analyze = secured(async (request, viewer) => {
     const value = await body(request)
@@ -219,6 +246,11 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
     get(`${PREFIX}/plan`, plan),
     get(`${PREFIX}/review`, review),
     get(`${PREFIX}/progress`, progress),
+    get(`${PREFIX}/lessons`, lessons),
+    get(`${PREFIX}/lesson`, lesson),
+    get(`${PREFIX}/lesson/listen`, listen),
+    post(`${PREFIX}/lesson/done`, lessonDone),
+    get(`${PREFIX}/audio`, example),
     post(`${PREFIX}/session/start`, start),
     post(`${PREFIX}/session/finish`, finish),
     post(`${PREFIX}/session/abandon`, abandon),

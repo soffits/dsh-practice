@@ -12,6 +12,7 @@ function StatusChips({ status, t }) {
   return h('div', { className: 'pr-chips' },
     status.cards?.due_today > 0 && h(K.Chip, { icon: 'rotate-ccw', tone: 'accent' }, counted(t, 'status.due', status.cards.due_today)),
     status.speaking_debt?.owed && h(K.Chip, { icon: 'timer', tone: 'warn' }, days == null ? t('status.noVoice') : counted(t, 'status.voiceDays', days)),
+    status.foundations?.stage === 'foundations' && h(K.Chip, { icon: 'graduation-cap', tone: 'muted' }, t('status.lessons', { done: status.foundations.lessons_done, total: status.foundations.lessons_total })),
     status.step != null && h(K.Chip, { icon: 'graduation-cap', tone: 'muted' }, t('status.step', { n: status.step })))
 }
 

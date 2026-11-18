@@ -59,13 +59,15 @@ export const Glyph = {
   pen: ({ size = 16 }) => svg(size, h('path', { d: 'M3 13l.6-2.6 7-7a1.4 1.4 0 0 1 2 2l-7 7L3 13ZM9.6 4.6l2 2', ...stroke })),
   send: ({ size = 16 }) => svg(size, h('path', { d: 'm2.5 8 11-5-4.5 10-1.8-4.2L2.5 8Z', ...stroke })),
   chat: ({ size = 16 }) => svg(size, h('path', { d: 'M3 4.5A1.5 1.5 0 0 1 4.5 3h7A1.5 1.5 0 0 1 13 4.5v5a1.5 1.5 0 0 1-1.5 1.5H7l-3 2.5V11h.5A1.5 1.5 0 0 1 3 9.5Z', ...stroke })),
+  play: ({ size = 16 }) => svg(size, h('path', { d: 'M5 3.2v9.6L13 8Z', fill: 'currentColor' })),
+  speaker: ({ size = 16 }) => svg(size, h('path', { d: 'M2.5 6.2h2.6L8.5 3.4v9.2L5.1 9.8H2.5Z', ...stroke }), h('path', { d: 'M11 5.6a3.4 3.4 0 0 1 0 4.8M12.6 3.9a5.8 5.8 0 0 1 0 8.2', ...stroke })),
   file: ({ size = 16 }) => svg(size, h('path', { d: 'M4 2h5l3 3v9H4zM9 2v3h3', ...stroke })),
 }
 
 /** The tile icon for a skill: a drawing, or a kit icon by name. */
 export const TILE = Object.freeze({ sm: 32, md: 38, lg: 52 })
 export function SkillTile({ skill, size = 'md', tone }) {
-  const spec = { speaking: [null, 'accent'], writing: ['notebook-pen', 'violet'], reading: ['book-open', 'ok'], listening: ['headphones', 'warn'], review: ['rotate-ccw', 'accent'] }[skill] ?? ['sparkles', 'muted']
+  const spec = { speaking: [null, 'accent'], writing: ['notebook-pen', 'violet'], reading: ['book-open', 'ok'], listening: ['headphones', 'warn'], review: ['rotate-ccw', 'accent'], lesson: ['headphones', 'accent'] }[skill] ?? ['sparkles', 'muted']
   const pixels = TILE[size] ?? TILE.md
   // The kit's tile draws its own icons by name; the microphone is ours, on the same tile surface.
   if (skill === 'speaking') return h('span', { className: 'uk-tile', style: { '--uk-size': `${pixels}px`, color: K.toneColor(tone ?? spec[1]) }, 'aria-hidden': true }, h(Glyph.mic, { size: Math.round(pixels * 0.5) }))
