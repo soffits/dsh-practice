@@ -29,7 +29,7 @@ Then set the row in your profile patch:
 |---|---|
 | `command` | The practice command as an argument list. |
 | `root` | The folder that holds one folder per learner. It is watched. Empty: DSH's `PRACTICE_ROOT`. |
-| `dataDir` | Where uploads and analyses in progress are kept until they finish (`<dataDir>/jobs`). |
+| `dataDir` | Where uploads and analyses in progress are kept until they finish (`<dataDir>/jobs`). Created when missing, and watched again if it is deleted while the plugin runs. |
 | `people`, `peopleFile`, `peopleKey` | Verified sign-in id (an OIDC subject) → person id, inline or from a JSON file. With a mapping, anyone not in it has no learner. |
 | `learners` | Person id → learner id, when it differs from the person id. |
 | `owner` | The person id when no mapping is set (a DSH only one person uses). |
@@ -39,7 +39,7 @@ A person's learner folder is `<root>/<learner id>`. Someone with no practice dat
 
 ## Recording
 
-The page records with `MediaRecorder` and asks the browser which type it can write: WebM/Opus in Chrome, Edge, Firefox and Safari 18.4 and later, MP4/AAC in older Safari and on iPhones before iOS 18.4. The server takes any of them (speech-check reads whatever ffmpeg reads). Browsers only give the microphone to secure pages, so DSH must be served over https (or from localhost). Where recording is not possible, the page says why and lets you choose an audio file instead.
+The page records with `MediaRecorder` and asks the browser which type it can write: WebM/Opus in Chrome, Edge, Firefox and Safari 18.4 and later, MP4/AAC in older Safari and on iPhones before iOS 18.4. The server takes any of them (speech-check reads whatever ffmpeg reads). A browser writes WebM with no duration in it, so with `ffmpeg` on the PATH the server copies the clip into a fresh file that has one (no re-encoding), and the player shows its length and can seek. Browsers only give the microphone to secure pages, so DSH must be served over https (or from localhost). Where recording is not possible, the page says why and lets you choose an audio file instead.
 
 A clip is streamed to the server and analysed by a detached `practice attempt add --audio` job, so a slow analysis never blocks the page and survives a DSH restart. The attempt is saved at once and shows as analysing; if the analysis is cut off, the page offers to run it again.
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- A practice or jobs folder deleted while DSH runs is created again and watched again, so open pages keep updating and uploads keep working without a restart.
+- Counts use each language's plural forms ("1 card due", "2 cards due"; French and Chinese too).
+- A browser's WebM recording gets its duration (copied with ffmpeg when it is available), so the player no longer shows 0:00 / 0:00.
+- The release goes out through a tag workflow with npm trusted publishing.
+
 ## 0.1.1
 
 - The empty state's button no longer sits against the text above it.
