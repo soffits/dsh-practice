@@ -1,0 +1,8 @@
+# Bundle layer for @soffits/dsh-practice: one Host row serving the practice page. Point root at the
+# folder that holds one folder per learner (the `practice` command's PRACTICE_ROOT). For a DSH
+# several people sign in to, set people / peopleFile in a profile override of this row.
+- insert:
+    - id: practice
+      name: '@soffits/dsh-practice'
+      config:
+        command: [practice]
