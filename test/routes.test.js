@@ -251,3 +251,15 @@ test('example clips are served from the learner\'s own audio folder only, by byt
   for (const file of ['../bo/fr/audio/aaaaaaaaaaaa.mp3', 'audio/../learner.json', 'audio/0123456789ab.exe', 'learner.json']) assert.equal((await s.call('GET /audio', { query: `?lang=fr&file=${encodeURIComponent(file)}` })).status, 400, file)
   s.changes.stop()
 })
+
+test('the words route is never kept by the browser, so a page swapped by an update fetches the new words', async () => {
+  const s = await setup()
+  try {
+    const { status, response } = await s.call('GET /words')
+    assert.equal(status, 200)
+    assert.match(response.headers.get('cache-control'), /no-cache/)
+    assert.doesNotMatch(response.headers.get('cache-control'), /max-age/)
+  } finally {
+    s.changes.stop()
+  }
+})

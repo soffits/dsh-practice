@@ -233,7 +233,7 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
 
   const words = async () => {
     try {
-      return json(200, { tables: await strings() }, { 'cache-control': 'private, max-age=300' })
+      return json(200, { tables: await strings() }, { 'cache-control': 'private, no-cache' })
     } catch (error) {
       log?.(error)
       return json(500, { error: 'The words are not available.' })
