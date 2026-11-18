@@ -1,6 +1,6 @@
 {
   "name": "@soffits/dsh-practice",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A language-practice page for DeepSeek Harness: today's plan, due review cards, a speaking recorder whose clips go to speech analysis, writing answers, session finish and progress, over the `practice` command line.",
   "type": "module",
   "license": "MIT",

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url'
 import z from '@deepseek-ai/schemastery'
 import { createChanges } from './src/changes.js'
 import { createJobs, personHash } from './src/jobs.js'
-import { readLocales, tables } from './src/locales.js'
+import { wordsIn } from './src/locales.js'
 import { createPeople, expandHome, personKey } from './src/people.js'
 import { createPractice } from './src/practice.js'
 import { createRoutes } from './src/routes.js'
@@ -65,11 +65,10 @@ export function apply(ctx, config) {
   const jobs = createJobs({ dir: jobsDir, practice, beforePrepare: () => changes.ensure() })
   const changes = createChanges({ root, jobsDir, onJobExit: (hash, id) => { jobs.reap(hash, id).catch(error => logger.warn(`job ${id}: ${error.message}`)) }, onRearm: () => { logger.warn('a watched folder was missing and is watched again'); jobs.reapAll().catch(() => {}) } })
   const people = createPeople({ people: config.people ?? {}, peopleFile: config.peopleFile ? absolute(config.peopleFile) : '', peopleKey: config.peopleKey ?? '' }, { warn: message => logger.warn(message) })
-  const strings = readLocales(fileURLToPath(new URL('./locale/', import.meta.url))).then(tables)
   const lower = map => Object.fromEntries(Object.entries(map ?? {}).map(([key, value]) => [personKey(key), value]))
   const routes = createRoutes({
     practice, jobs, changes, people,
-    strings: () => strings,
+    strings: wordsIn(fileURLToPath(new URL('./locale/', import.meta.url))),
     identity: () => ctx.get('requestIdentity'),
     settings: { owner: personKey(config.owner || 'owner'), learners: lower(config.learners) },
     maxClipBytes: (config.maxClipMB ?? 60) * 1024 * 1024,

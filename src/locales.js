@@ -38,3 +38,12 @@ export function tables(locales) {
   }
   return out
 }
+
+/**
+ * The page's words as the strings route serves them, read from the folder on every call. DSH swaps a
+ * plugin's browser half as soon as its files change, before the host half is reloaded, so a table kept
+ * from start would hand a freshly updated page the old words (raw keys for every new one).
+ */
+export function wordsIn(dir) {
+  return () => readLocales(dir).then(tables)
+}

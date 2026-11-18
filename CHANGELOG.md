@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+The page's words are read from the locale files on each request and not kept by the browser, so a page updated in place gets its new words right away instead of showing raw keys.
+
 ## 0.2.1
 
 - The open lesson sits above the list of lessons, the lesson's task shows "Lesson" instead of a missing word, a lone clip is labelled "Play", and the four tabs fit a phone width.
