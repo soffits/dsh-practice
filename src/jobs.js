@@ -20,12 +20,13 @@ const RUN = '"$@" >out.json 2>err.txt; code=$?; echo "$code" >exit.tmp; mv exit.
 
 export const personHash = person => createHash('sha256').update(String(person)).digest('hex').slice(0, 16)
 
-/** @param {{ dir: string, practice: ReturnType<import('./practice.js').createPractice>, alive?: (pid: number) => boolean }} o */
-export function createJobs({ dir, practice, alive = pidAlive }) {
+/** @param {{ dir: string, practice: ReturnType<import('./practice.js').createPractice>, alive?: (pid: number) => boolean, beforePrepare?: () => Promise<void> }} o `beforePrepare` runs before a job folder is made: the place to put the jobs folder and its watcher back if they were removed. */
+export function createJobs({ dir, practice, alive = pidAlive, beforePrepare = async () => {} }) {
   const folder = (person, id) => join(dir, personHash(person), id)
 
   /** A new job folder for an upload to be written into. */
   async function prepare(person) {
+    await beforePrepare()
     const id = `${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`
     const path = folder(person, id)
     await mkdir(path, { recursive: true, mode: 0o700 })

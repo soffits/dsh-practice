@@ -160,7 +160,7 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
     return json(200, await call(viewer, checked(value.lang, LANG, 'lang'), [...placement(value), '--correct', correct, '--total', total]))
   })
 
-  const upload = secured(uploadRoute({ jobs, maxBytes: maxClipBytes }))
+  const upload = secured(uploadRoute({ jobs, maxBytes: maxClipBytes, env: practice.env }))
   const play = secured(playRoute({ practice }))
 
   const analyze = secured(async (request, viewer) => {
@@ -190,6 +190,7 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
           }
         }
         write('retry: 5000\n: open\n\n')
+        changes.ensure().catch(error => log?.(error))
         const unlisten = changes.listen({ learner: viewer.learner, hash: personHash(viewer.person) }, what => write(`data: ${JSON.stringify({ type: 'change', what, at: new Date().toISOString() })}\n\n`))
         const beat = setInterval(() => write(': beat\n\n'), HEARTBEAT_MS)
         stop = () => { unlisten(); clearInterval(beat) }

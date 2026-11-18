@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createChanges } from '../src/changes.js'
 import { scratch, until } from './helpers.js'
@@ -53,5 +53,33 @@ test('a job\'s files tell its person, and its exit file tells the plugin', async
   await until(() => heard.length > 0)
   assert.deepEqual(heard[0], ['jobs'])
   assert.deepEqual(exits[0], ['abcdef0123456789', 'job1-aaaaaa'])
+  changes.stop()
+})
+
+test('a watched folder removed while running is made again and watched again, and pages are told', async () => {
+  const { root, jobsDir, changes } = await setup({ windowMs: 20 })
+  const heard = []
+  changes.listen({ learner: 'ana', hash: 'abcdef0123456789' }, what => heard.push(what))
+  await rm(jobsDir, { recursive: true })
+  await rm(root, { recursive: true })
+  await changes.ensure()
+  assert.ok((await stat(jobsDir)).isDirectory())
+  assert.ok((await stat(root)).isDirectory())
+  await until(() => heard.flat().includes('jobs'))
+  heard.length = 0
+  await mkdir(join(jobsDir, 'abcdef0123456789', 'j-1'), { recursive: true })
+  await writeFile(join(jobsDir, 'abcdef0123456789', 'j-1', 'meta.json'), '{}')
+  await mkdir(join(root, 'ana'), { recursive: true })
+  await writeFile(join(root, 'ana', 'deck.jsonl'), 'a')
+  await until(() => heard.flat().includes('jobs') && heard.flat().includes('data'))
+  changes.stop()
+})
+
+test('a folder removed under a running plugin is noticed without anyone asking', async () => {
+  const rearmed = []
+  const { jobsDir, changes } = await setup({ windowMs: 20, onRearm: () => rearmed.push(1) })
+  await rm(jobsDir, { recursive: true })
+  await until(() => rearmed.length > 0)
+  assert.ok((await stat(jobsDir)).isDirectory())
   changes.stop()
 })
