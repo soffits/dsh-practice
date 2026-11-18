@@ -1,10 +1,11 @@
 /** The practice page: header, language and view switches, and the one state every view reads. It re-reads whenever the change stream says the data moved. */
 import { read } from './api.js'
+import { newestFirst } from './reads.js'
 import { Today, Finished } from './today.js'
 import { Lessons } from './lesson.js'
 import { Review } from './review.js'
 import { Progress } from './progress.js'
-import { ask, Btn, canAsk, Empty, Glyph, h, K, P, Problem, React, useCallback, useEffect, useState } from './ui.js'
+import { ask, Btn, canAsk, Empty, Glyph, h, K, P, Problem, React, useCallback, useEffect, useRef, useState } from './ui.js'
 
 const LANG_KEY = 'dsh-practice:lang'
 const VIEWS = ['today', 'lessons', 'review', 'progress']
@@ -31,15 +32,33 @@ export function Page({ t, initialView }) {
   const stream = K.useEventStream('api/practice/events', bump)
   useEffect(() => { if (stream === 'live') bump() }, [stream, bump])
 
+  // Every read is shown as soon as it lands unless a newer one already was: the read on opening shows at once, and
+  // the one the stream asks for when it connects (or after a change) only refreshes it. A read for a language the
+  // page has since left is dropped. When the page asked for no language (or one not set up), it takes the one the
+  // answer is for, and that answer already is the read for it.
+  const reads = useRef(null)
+  reads.current ??= newestFirst()
+  const adopted = useRef(null)
+  const langNow = useRef(lang)
+  langNow.current = lang
   useEffect(() => {
-    let live = true
+    if (adopted.current !== null && adopted.current === lang) {
+      adopted.current = null
+      return
+    }
+    const ticket = reads.current.start()
+    const fresh = () => lang === langNow.current && ticket.fresh()
     read('state', { lang }).then(body => {
-      if (!live) return
+      if (!fresh()) return
+      ticket.show()
       setData(body)
       setProblem(null)
-      if (body.lang && body.lang !== lang) setLang(body.lang)
-    }, error => { if (live) setProblem(error.message) })
-    return () => { live = false }
+      if (body.lang && body.lang !== lang) {
+        adopted.current = body.lang
+        langNow.current = body.lang
+        setLang(body.lang)
+      }
+    }, error => { if (fresh()) setProblem(error.message) })
   }, [lang, version])
 
   const choose = value => { rememberLang(value); setLang(value); setFinished(null) }

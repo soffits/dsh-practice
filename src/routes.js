@@ -1,12 +1,13 @@
 /**
  * The page's API: exact Fetch routes under DSH's `/api`, so DSH admits the browser first and the
  * sign-in plugin's `requestIdentity` sees the request. Every answer is decided here per request
- * and comes from the `practice` command; nothing is kept between requests.
+ * and comes from the `practice` command, one call per view where the command can answer it at once;
+ * nothing is kept between requests.
  *
- *   GET  /api/practice/state?lang=        who, languages, status, the open session (or today's plan), its attempts, running jobs
+ *   GET  /api/practice/state?lang=        who, languages, status, the open session (or today's plan), its attempts, running jobs (`overview`)
  *   GET  /api/practice/plan?lang=&minutes=  today's plan for a time budget
  *   GET  /api/practice/review?lang=       due cards, with answers (the page hides them until asked)
- *   GET  /api/practice/progress?lang=     progress, facts, recent sessions and attempts
+ *   GET  /api/practice/progress?lang=     progress, facts, recent sessions and attempts (`progress --recent`)
  *   GET  /api/practice/lessons?lang=      the foundations lessons with their state (`lesson list`)
  *   GET  /api/practice/lesson?lang=&id=   one lesson with its items and clips (`lesson show`; the next lesson without an id)
  *   GET  /api/practice/lesson/listen?lang=&id=  the lesson as one listen-and-repeat file: { file }
@@ -32,7 +33,8 @@ import { ATTEMPT, CARD, ITEM, LANG, LESSON, RATINGS, SESSION, TASK, body, checke
 export const PREFIX = '/api/practice'
 const HEARTBEAT_MS = 25 * 1000
 const MAX_TEXT = 20000
-const RECENT_ATTEMPTS = 6
+const RECENT = 6
+const RECENT_SESSIONS = 5
 const REVIEW_BATCH = 40
 const SKILLS = ['listening', 'reading', 'writing', 'speaking']
 
@@ -54,29 +56,22 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
   const call = (viewer, lang, args) => practice.run(viewer.learner, ['--lang', lang, ...args])
   const langOf = request => checked(new URL(request.url).searchParams.get('lang') ?? '', LANG, 'lang')
 
-  /** `attempt show` for the given ids, each with whether its analysis is under way. */
-  async function attemptsOf(viewer, lang, ids, running) {
-    const shown = await Promise.all(ids.map(id => call(viewer, lang, ['attempt', 'show', id])))
-    return shown.map(attempt => ({ ...attempt, analysing: attempt.speech?.status === 'pending' ? (running ? 'running' : 'interrupted') : null }))
-  }
+  /** Each attempt with whether its analysis is under way, interrupted (pending with no job running) or not pending. */
+  const marked = (attempts, running) => attempts.map(attempt => ({ ...attempt, analysing: attempt.speech?.status === 'pending' ? (running ? 'running' : 'interrupted') : null }))
+  const runningIn = (jobsOfPerson, lang) => jobsOfPerson.filter(job => job.lang === lang)
 
   const state = secured(async (request, viewer) => {
     const wanted = new URL(request.url).searchParams.get('lang') ?? ''
     const me = { person: viewer.person, name: viewer.name }
     if (!(await practice.exists(viewer.learner))) return json(200, { me, learner: { id: viewer.learner, exists: false } })
-    const facts = await practice.run(viewer.learner, ['facts'])
-    const languages = Object.keys(facts.languages ?? {})
-    const lang = languages.includes(wanted) ? wanted : languages[0]
-    if (lang === undefined) return json(200, { me, learner: { id: viewer.learner, exists: true }, languages })
-    const status = await call(viewer, lang, ['status'])
-    const running = (await jobs.list(viewer.person)).filter(job => job.lang === lang)
-    const open = status.open_sessions.at(-1)
-    const [session, plan] = await Promise.all([
-      open ? call(viewer, lang, ['session', 'show', open]) : null,
-      open ? null : call(viewer, lang, ['plan']),
+    const [overview, jobsOfPerson] = await Promise.all([
+      practice.run(viewer.learner, [...(LANG.test(wanted) ? ['--lang', wanted] : []), 'overview']),
+      jobs.list(viewer.person),
     ])
-    const attempts = session ? await attemptsOf(viewer, lang, session.attempts, running.some(job => job.state === 'running')) : []
-    return json(200, { me, learner: { id: viewer.learner, exists: true }, languages, lang, status, session, plan, attempts, jobs: running })
+    const { languages, lang, status, session, plan, attempts } = overview
+    if (lang === null) return json(200, { me, learner: { id: viewer.learner, exists: true }, languages })
+    const running = runningIn(jobsOfPerson, lang)
+    return json(200, { me, learner: { id: viewer.learner, exists: true }, languages, lang, status, session, plan, attempts: marked(attempts, running.some(job => job.state === 'running')), jobs: running })
   }, { empty })
 
   const plan = secured(async (request, viewer) => {
@@ -89,12 +84,10 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
 
   const progress = secured(async (request, viewer) => {
     const lang = langOf(request)
-    const [overall, facts, sessions, listed] = await Promise.all([
-      call(viewer, lang, ['progress']), practice.run(viewer.learner, ['facts']), call(viewer, lang, ['session', 'list']), call(viewer, lang, ['attempt', 'list']),
-    ])
-    const running = (await jobs.list(viewer.person)).some(job => job.lang === lang && job.state === 'running')
-    const recent = await attemptsOf(viewer, lang, listed.attempts.slice(-RECENT_ATTEMPTS).reverse().map(attempt => attempt.id), running)
-    return json(200, { progress: overall, facts: facts.languages?.[lang] ?? null, sessions: sessions.sessions.slice(-5).reverse(), recent })
+    const [overall, jobsOfPerson] = await Promise.all([call(viewer, lang, ['progress', '--recent', RECENT]), jobs.list(viewer.person)])
+    const { facts, recent, ...rest } = overall
+    const running = runningIn(jobsOfPerson, lang).some(job => job.state === 'running')
+    return json(200, { progress: rest, facts: facts ?? null, sessions: recent.sessions.slice(0, RECENT_SESSIONS), recent: marked(recent.attempts, running) })
   })
 
   const lessons = secured(async (request, viewer) => json(200, await call(viewer, langOf(request), ['lesson', 'list'])))

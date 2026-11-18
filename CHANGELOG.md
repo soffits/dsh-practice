@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+The page opens faster. Its state is one `practice overview` call and the progress view one `progress --recent` call, instead of several calls in a row, and the page shows the first state it reads instead of waiting for the refresh the event stream asks for when it connects. Needs a `practice` with `overview` and `progress --recent`.
+
 ## 0.2.2
 
 The page's words are read from the locale files on each request and not kept by the browser, so a page updated in place gets its new words right away instead of showing raw keys.

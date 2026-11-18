@@ -263,3 +263,32 @@ test('the words route is never kept by the browser, so a page swapped by an upda
     s.changes.stop()
   }
 })
+
+test('the state is one overview call, asked in the language the page wants only when it looks like one', async () => {
+  const s = await setup()
+  await s.call('GET /state', { query: '?lang=fr' })
+  await s.call('GET /state', { query: '?lang=--evil' })
+  const asked = (await s.calls()).map(call => call.argv.slice(call.argv.indexOf('--json') + 1))
+  assert.deepEqual(asked, [['--lang', 'fr', 'overview'], ['overview']])
+  s.changes.stop()
+})
+
+test('a pending analysis with no job running reads as interrupted', async () => {
+  const s = await setup({ env: { FAKE_PRACTICE_PENDING: '1' } })
+  const { body } = await s.call('GET /state')
+  assert.equal(body.attempts[0].analysing, 'interrupted')
+  s.changes.stop()
+})
+
+test('progress is one call: the overall progress, the facts, the last sessions and attempts', async () => {
+  const s = await setup()
+  const { status, body } = await s.call('GET /progress', { query: '?lang=en' })
+  assert.equal(status, 200)
+  assert.deepEqual(body.facts, { sessions_finished: 1 })
+  assert.equal(body.progress.recent, undefined)
+  assert.equal(body.sessions.length, 5)
+  assert.deepEqual(body.recent.map(attempt => [attempt.id, attempt.analysing]), [['s1-a2', null], ['s1-a1', null]])
+  const asked = (await s.calls()).map(call => call.argv.slice(call.argv.indexOf('--json') + 1))
+  assert.deepEqual(asked, [['--lang', 'en', 'progress', '--recent', '6']])
+  s.changes.stop()
+})
