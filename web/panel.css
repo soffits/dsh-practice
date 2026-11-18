@@ -170,6 +170,7 @@
 @media (width<=760px){
 .pr-head{padding:16px 12px 8px}
 .pr-tabs{flex:1 1 100%}
+.pr-tabs [role=tab],.pr-tabs button{white-space:nowrap;padding-left:6px;padding-right:6px;font-size:13px}
 .pr-tabs>*{flex:1}
 .pr-headLive{flex:0 0 auto}
 .pr-content{gap:14px;padding:4px 12px 40px}

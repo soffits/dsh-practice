@@ -210,18 +210,20 @@ export function Lessons({ lang, version, t }) {
   const units = list.status?.units ?? []
   const titleOf = unit => units.find(entry => entry.id === unit)?.title ?? unit
   const order = [...new Set(list.lessons.map(entry => entry.unit))]
+  const body = lesson && lesson.id === target && h(Section, null, h(LessonBody, { lang, lesson, t, onChanged: () => setOpenId(target) }))
   return h('div', { className: 'pr-lessons' },
+    h(Problem, null, problem),
+    body,
     h(Section, { title: t('lesson.title'), aside: list.status && h(K.Chip, { icon: 'graduation-cap', tone: list.status.complete ? 'ok' : 'muted' }, t('status.lessons', { done: list.status.lessons_done, total: list.status.lessons_total })) },
       h('div', { className: 'pr-units' }, order.map(unit => {
         const rows = list.lessons.filter(entry => entry.unit === unit)
         return h('div', { key: unit, className: 'pr-unit' },
           h('h3', null, titleOf(unit), h('span', { className: 'pr-meta' }, ` ${rows.filter(row => row.done).length}/${rows.length}`)),
           h('ul', { className: 'pr-lessonList' }, rows.map(row => h('li', { key: row.id },
-            h('button', { type: 'button', className: `pr-lessonRow ${K.TOUCH}`, 'data-current': row.id === target ? 'true' : undefined, 'aria-current': row.id === target ? 'true' : undefined, onClick: () => { setOpenId(row.id); setLesson(null) } },
+            h('button', { type: 'button', className: `pr-lessonRow ${K.TOUCH}`, 'data-current': row.id === target ? 'true' : undefined, 'aria-current': row.id === target ? 'true' : undefined, onClick: () => { setOpenId(row.id); setLesson(null); document.querySelector('.pr-scroll')?.scrollTo({ top: 0 }) } },
               h('span', { className: 'pr-lessonRowTitle' }, row.title),
               h('span', { className: 'pr-meta' }, t('minutes', { n: row.minutes })),
               row.done ? h(P.Tag, { tone: 'success' }, h(Glyph.check, { size: 12 }), ` ${t('item.done')}`) : null)))))
       }))),
-    h(Problem, null, problem),
-    lesson && lesson.id === target && h(Section, null, h(LessonBody, { lang, lesson, t, onChanged: () => setOpenId(target) })))
+  )
 }

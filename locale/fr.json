@@ -237,6 +237,7 @@
     "review.prompt.dictate": "Écoutez et écrivez.",
     "review.prompt.pick": "Écoutez. Lequel avez-vous entendu ?",
     "review.rightPick": "C'est celui-là.",
-    "review.wrongPick": "Pas cette fois."
+    "review.wrongPick": "Pas cette fois.",
+    "skill.lesson": "Leçon"
   }
 }

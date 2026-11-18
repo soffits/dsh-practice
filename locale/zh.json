@@ -233,6 +233,7 @@
     "review.prompt.dictate": "听，然后写下来。",
     "review.prompt.pick": "听一听，你听到的是哪一个？",
     "review.rightPick": "对了。",
-    "review.wrongPick": "这次不对。"
+    "review.wrongPick": "这次不对。",
+    "skill.lesson": "课程"
   }
 }

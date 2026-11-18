@@ -48,6 +48,6 @@ export function PlayButton({ lang, file, label, text, autoPlay = false, size = '
 /** The normal and slow clips of one spoken text. */
 export function Clip({ lang, audio, t, big = false }) {
   return h('span', { className: `pr-clip${big ? ' pr-clipBig' : ''}` },
-    h(PlayButton, { lang, file: audio.file, text: audio.text, label: t('lesson.normal'), size: big ? 'md' : 'sm', variant: big ? 'primary' : 'outline' }),
+    h(PlayButton, { lang, file: audio.file, text: audio.text, label: t(audio.slow_file ? 'lesson.normal' : 'review.play'), size: big ? 'md' : 'sm', variant: big ? 'primary' : 'outline' }),
     audio.slow_file !== null && audio.slow_file !== undefined && h(PlayButton, { lang, file: audio.slow_file, text: audio.text, label: t('lesson.slow'), size: big ? 'md' : 'sm' }))
 }

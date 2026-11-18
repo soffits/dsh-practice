@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- The open lesson sits above the list of lessons, the lesson's task shows "Lesson" instead of a missing word, a lone clip is labelled "Play", and the four tabs fit a phone width.
+
 ## 0.2.0
 
 - Lessons for beginners: a Lessons view (when the language has foundations lessons in the practice tool) and the next lesson as a task of today's session. Each lesson has its explanation, every item with normal and slow example audio, the whole lesson as one listen-and-repeat file, recording of a repeat per item or for all items with read-aloud feedback marked as a low-reliability hint, and a button to mark it done.

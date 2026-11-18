@@ -235,6 +235,7 @@
     "review.prompt.dictate": "Listen and write it down.",
     "review.prompt.pick": "Listen. Which one did you hear?",
     "review.rightPick": "That's the one.",
-    "review.wrongPick": "Not this time."
+    "review.wrongPick": "Not this time.",
+    "skill.lesson": "Lesson"
   }
 }
