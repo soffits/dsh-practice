@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile, readdir } from 'node:fs/promises'
+import { PLURAL_FORM } from '../web/plural.js'
 
 const WEB = new URL('../web/', import.meta.url)
 const files = (await readdir(WEB)).filter(name => name.endsWith('.js'))
@@ -33,9 +34,11 @@ test('every icon the page asks the kit for is bundled in it', async () => {
 
 test('every word the page asks for exists in every language, and no language is missing a key another has', async () => {
   const keys = new Set()
+  const counted = new Set()
   for (const text of Object.values(sources)) {
     for (const match of text.matchAll(/'((?:ask|attempt|empty|finish|item|metric|progress|record|review|session|skill|status|task|today|trend|view|write|answer)\.[A-Za-z0-9._-]+)'/g)) keys.add(match[1])
     for (const match of text.matchAll(/\bt\('([a-z][\w.-]*)'/g)) keys.add(match[1])
+    for (const match of text.matchAll(/counted\(t, '([a-z][\w.-]*)'/g)) counted.add(match[1])
   }
   for (const [prefix, names] of Object.entries({
     'metric.': ['duration_s', 'words', 'speech_rate_wpm', 'pauses_per_min', 'fillers_per_100_words', 'phonation_time_ratio', 'mean_length_of_run_words', 'response_time_share', 'articulation_rate_syll_per_s', 'median_sentence_range_st'],
@@ -47,14 +50,25 @@ test('every word the page asks for exists in every language, and no language is 
     'answer.': ['voice', 'text', 'objective', 'review', 'drill'],
     'view.': ['today', 'review', 'progress'],
   })) for (const name of names) keys.add(prefix + name)
+  for (const key of counted) keys.delete(key)
   assert.ok(keys.size > 100)
   const tables = {}
   for (const tag of ['en', 'fr', 'zh']) tables[tag] = JSON.parse(await readFile(new URL(`../locale/${tag}.json`, import.meta.url), 'utf8')).ui
-  for (const tag of Object.keys(tables)) assert.deepEqual([...keys].filter(key => !(key in tables[tag])), [], tag)
-  for (const tag of ['fr', 'zh']) assert.deepEqual(Object.keys(tables.en).filter(key => !(key in tables[tag])), [], `${tag} lacks keys en has`)
+  // A counted entry has the forms its language's plural rules use, so languages differ in the suffixes but never in the base keys.
+  const base = key => key.replace(PLURAL_FORM, '')
+  const bases = table => new Set(Object.keys(table).map(base))
   for (const tag of Object.keys(tables)) {
-    const placeholders = key => new Set([...tables[tag][key].matchAll(/\{(\w+)\}/g)].map(match => match[1]))
-    for (const key of Object.keys(tables.en)) assert.deepEqual([...placeholders(key)].sort(), [...new Set([...tables.en[key].matchAll(/\{(\w+)\}/g)].map(match => match[1]))].sort(), `${tag} ${key}`)
+    assert.deepEqual([...keys].filter(key => !(key in tables[tag])), [], tag)
+    for (const key of counted) {
+      assert.ok(`${key}.other` in tables[tag], `${tag} ${key}.other`)
+      const categories = new Intl.PluralRules(tag).resolvedOptions().pluralCategories
+      assert.deepEqual(categories.filter(category => !(`${key}.${category}` in tables[tag])), [], `${tag} ${key} lacks a plural form`)
+    }
+  }
+  for (const tag of ['fr', 'zh']) assert.deepEqual([...bases(tables.en)].filter(key => !bases(tables[tag]).has(key)), [], `${tag} lacks keys en has`)
+  for (const tag of Object.keys(tables)) {
+    const placeholders = text => [...new Set([...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]))].sort()
+    for (const key of Object.keys(tables[tag])) assert.deepEqual(placeholders(tables[tag][key]), placeholders(tables.en[`${base(key)}.other`] ?? tables.en[key]), `${tag} ${key}`)
   }
 })
 

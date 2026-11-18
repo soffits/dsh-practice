@@ -1,6 +1,7 @@
 /** The Today view: before a session, today's plan and a way to start it; during one, its items to do, and finishing it. */
 import { read, write } from './api.js'
 import { nextItem, sessionProgress, short } from './format.js'
+import { counted } from './plural.js'
 import { itemSkill, itemTitle, TaskCard } from './task.js'
 import { ask, Btn, canAsk, Empty, Glyph, h, K, P, Problem, React, Section, SkillTile, TILE, useEffect, useState } from './ui.js'
 
@@ -9,8 +10,8 @@ const MINUTES = [10, 15, 20, 30, 45]
 function StatusChips({ status, t }) {
   const days = status.speaking_debt?.days_since_voice_answer
   return h('div', { className: 'pr-chips' },
-    status.cards?.due_today > 0 && h(K.Chip, { icon: 'rotate-ccw', tone: 'accent' }, t('status.due', { n: status.cards.due_today })),
-    status.speaking_debt?.owed && h(K.Chip, { icon: 'timer', tone: 'warn' }, days == null ? t('status.noVoice') : t('status.voiceDays', { n: days })),
+    status.cards?.due_today > 0 && h(K.Chip, { icon: 'rotate-ccw', tone: 'accent' }, counted(t, 'status.due', status.cards.due_today)),
+    status.speaking_debt?.owed && h(K.Chip, { icon: 'timer', tone: 'warn' }, days == null ? t('status.noVoice') : counted(t, 'status.voiceDays', days)),
     status.step != null && h(K.Chip, { icon: 'graduation-cap', tone: 'muted' }, t('status.step', { n: status.step })))
 }
 
