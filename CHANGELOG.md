@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- `@deepseek-ai/schemastery` is a peer dependency (DSH provides it) instead of a pinned dependency, so a package manager no longer moves a private copy of it when versions change under a running DSH, which stopped the plugin from loading after an in-place update.
+
 ## 0.1.2
 
 - A practice or jobs folder deleted while DSH runs is created again and watched again, so open pages keep updating and uploads keep working without a restart.
