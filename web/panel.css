@@ -18,6 +18,7 @@
 .pr-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:48px 20px;text-align:center;color:var(--dsw-alias-label-tertiary)}
 .pr-empty h2{margin:4px 0 0;font-size:16px;font-weight:500;color:var(--dsw-alias-label-primary)}
 .pr-empty p{max-width:420px;margin:0}
+.pr-empty .pr-controls{margin-top:10px}
 .pr-note,.pr-meta{margin:0;font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-tertiary)}
 .pr-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .pr-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
