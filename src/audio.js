@@ -3,8 +3,9 @@
  * to `practice attempt add --audio`) and playing a stored clip back to its owner, with byte ranges
  * (Safari will not play audio without them).
  */
+import { execFile } from 'node:child_process'
 import { createReadStream, createWriteStream } from 'node:fs'
-import { readdir, stat } from 'node:fs/promises'
+import { readdir, rename, rm, stat } from 'node:fs/promises'
 import { join, resolve, sep } from 'node:path'
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
@@ -28,6 +29,22 @@ export const CLIP_TYPES = Object.freeze({
 })
 const PLAY_TYPES = Object.freeze({ '.webm': 'audio/webm', '.ogg': 'audio/ogg', '.oga': 'audio/ogg', '.opus': 'audio/ogg', '.m4a': 'audio/mp4', '.mp4': 'audio/mp4', '.aac': 'audio/aac', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.flac': 'audio/flac' })
 const MIN_BYTES = 1500
+const REMUX_MS = 30_000
+
+/**
+ * A browser writes WebM as a live stream, with no duration in it, so a player shows 0:00 / 0:00 and cannot seek.
+ * Copying the streams into a fresh file with ffmpeg writes the duration. Where ffmpeg is missing or fails the
+ * clip stays as it came: the recording is what matters, the duration is a courtesy.
+ */
+export async function withDuration(path, env) {
+  if (!path.endsWith('.webm')) return
+  const fixed = `${path}.fixed.webm`
+  const ok = await new Promise(done => {
+    execFile('ffmpeg', ['-v', 'error', '-y', '-i', path, '-c', 'copy', fixed], { env, timeout: REMUX_MS }, error => done(!error))
+  })
+  if (ok && (await stat(fixed).catch(() => null))?.size > 0) await rename(fixed, path)
+  else await rm(fixed, { force: true })
+}
 
 export const mediaType = header => String(header ?? '').split(';')[0].trim().toLowerCase()
 
@@ -47,8 +64,9 @@ function capped(limit) {
  * @param {object} o
  * @param {ReturnType<import('./jobs.js').createJobs>} o.jobs
  * @param {number} o.maxBytes
+ * @param {NodeJS.ProcessEnv} [o.env] - where `ffmpeg` is looked up
  */
-export function uploadRoute({ jobs, maxBytes }) {
+export function uploadRoute({ jobs, maxBytes, env = process.env }) {
   return async (request, viewer) => {
     const query = new URL(request.url).searchParams
     const lang = checked(query.get('lang'), LANG, 'lang')
@@ -78,6 +96,7 @@ export function uploadRoute({ jobs, maxBytes }) {
     try {
       await pipeline(Readable.fromWeb(request.body), capped(maxBytes), createWriteStream(clip, { mode: 0o600 }))
       if ((await stat(clip)).size < MIN_BYTES) throw fail(400, 'That recording is empty.')
+      await withDuration(clip, env)
     } catch (error) {
       await jobs.dismiss(viewer.person, prepared.id)
       throw error.status ? error : fail(400, 'The recording did not arrive whole.')
