@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+The folder watchers close when the plugin is unloaded or reloaded; before, each reload left them running.
+
 ## 0.2.3
 
 The page opens faster. Its state is one `practice overview` call and the progress view one `progress --recent` call, instead of several calls in a row, and the page shows the first state it reads instead of waiting for the refresh the event stream asks for when it connects. Needs a `practice` with `overview` and `progress --recent`.

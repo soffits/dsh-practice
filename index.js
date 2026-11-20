@@ -76,6 +76,6 @@ export function apply(ctx, config) {
   })
   for (const route of [...routes, ...webRoutes(fileURLToPath(new URL('./web/', import.meta.url)))]) ctx.connection.fetch.register(route)
   changes.start().then(() => jobs.reapAll()).catch(error => logger.warn(`could not watch ${root}: ${error.message}`))
-  ctx.on('dispose', () => changes.stop())
+  ctx.effect(() => () => changes.stop())
   logger.info(`practice via ${command.join(' ')}, watching ${root} (${people.enabled ? 'per person' : 'single owner'})`)
 }
