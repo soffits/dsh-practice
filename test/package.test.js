@@ -29,7 +29,7 @@ test('the packed tarball loads from a clean folder and its host entry applies', 
   const script = `
     const m = await import(${JSON.stringify(pathToFileURL(join(site, 'node_modules', 'plugin', 'index.js')).href)})
     const routes = []
-    const ctx = { logger: () => ({ warn() {}, info() {} }), connection: { fetch: { register: route => routes.push(route.path) } }, get: () => undefined, on() {} }
+    const ctx = { logger: () => ({ warn() {}, info() {} }), connection: { fetch: { register: route => routes.push(route.path) } }, get: () => undefined, on() {}, effect: execute => { execute() } }
     m.apply(ctx, m.Config({ root: ${JSON.stringify(join(dir, 'root'))}, dataDir: ${JSON.stringify(join(dir, 'data'))} }))
     console.log(JSON.stringify({ name: m.name, routes: routes.length }))
     setTimeout(() => process.exit(), 200)`
