@@ -11,7 +11,7 @@ The page keeps no copy of your practice data: every read and write is a `practic
 
 ## Install
 
-The plugin needs the `practice` command on the machine DSH runs on, and DSH with [@soffits/dsh-ui-kit](https://github.com/soffits/dsh-ui-kit) and [@soffits/dsh-ui-actions](https://github.com/soffits/dsh-ui-actions) (the "Ask" buttons are hidden without the second). For several people, a sign-in plugin that provides `requestIdentity` (such as [@soffits/dsh-oidc](https://github.com/soffits/dsh-oidc)).
+The plugin needs the `practice` command on the machine DSH runs on. That command lives in [soffits/language-practice](https://github.com/soffits/language-practice), which is not public yet, so the plugin does not work without it; the page itself has no data of its own. If you have your own command that speaks the same interface, point `command` at it (see the settings below). It also needs DSH with [@soffits/dsh-ui-kit](https://github.com/soffits/dsh-ui-kit) and [@soffits/dsh-ui-actions](https://github.com/soffits/dsh-ui-actions) (the "Ask" buttons are hidden without the second). For several people, a sign-in plugin that provides `requestIdentity` (such as [@soffits/dsh-oidc](https://github.com/soffits/dsh-oidc)).
 
 ```sh
 dsh plugin --profile web add @soffits/dsh-practice
