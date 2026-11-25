@@ -24,7 +24,7 @@ test('every kit piece the page uses (K.*) is one the kit provides', async () => 
 })
 
 test('every icon the page asks the kit for is bundled in it', async () => {
-  const kit = JSON.parse(await readFile(new URL('../../dsh-ui-kit/icons.json', import.meta.url), 'utf8').catch(() => 'null'))
+  const kit = JSON.parse(await readFile(new URL('../../dsh-plugin-sdk/ui/icons.json', import.meta.url), 'utf8').catch(() => 'null'))
   if (kit === null) return // the kit's source tree is not beside this one (CI)
   const names = new Set(kit.names)
   const used = [...all.matchAll(/icon: '([a-z0-9-]+)'/g)].map(match => match[1]).concat([...all.matchAll(/\['([a-z0-9-]+)', '(?:accent|violet|ok|warn|muted)'\]/g)].map(match => match[1]))

@@ -6,7 +6,7 @@ export let React
 export let h
 /** DSH's own components (@deepseek-ai/dsh-client-ui-primitives). */
 export let P
-/** The shared kit (@soffits/dsh-ui-kit, ctx.uiKit). */
+/** The shared kit (@soffits/dsh-plugin-sdk, ctx.uiKit). */
 export let K
 
 const SOURCE = '@soffits/dsh-practice'
