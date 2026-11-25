@@ -17,10 +17,10 @@ The plugin needs the `practice` command on the machine DSH runs on. It lives in 
 uv tool install git+https://github.com/soffits/language-practice
 ```
 
-That is enough for planning, writing practice and review cards. For voice answers also install [speech-check](https://github.com/soffits/speech-check) (`uv tool install git+https://github.com/soffits/speech-check`, then `speech-check setup` to download its models). If you have your own command that speaks the same interface, point `command` at it (see the settings below). It also needs DSH with [@soffits/dsh-plugin-sdk](https://github.com/soffits/dsh-ui-kit) and [@soffits/dsh-plugin-sdk](https://github.com/soffits/dsh-ui-actions) (the "Ask" buttons are hidden without the second). For several people, a sign-in plugin that provides `requestIdentity` (such as [@soffits/dsh-oidc](https://github.com/soffits/dsh-oidc)).
+That is enough for planning, writing practice and review cards. For voice answers also install [speech-check](https://github.com/soffits/speech-check) (`uv tool install git+https://github.com/soffits/speech-check`, then `speech-check setup` to download its models). If you have your own command that speaks the same interface, point `command` at it (see the settings below). It also needs DSH with [@soffits/dsh-plugin-sdk](https://github.com/soffits/dsh-plugin-sdk) installed (the page is drawn with its pieces, and the "Ask" buttons come from it). For several people, a sign-in plugin that provides `requestIdentity` (such as [@soffits/dsh-oidc](https://github.com/soffits/dsh-oidc)).
 
 ```sh
-dsh plugin --profile web add @soffits/dsh-practice
+dsh plugin --profile web add @soffits/dsh-plugin-sdk @soffits/dsh-practice
 ```
 
 Then set the row in your profile patch:
@@ -42,7 +42,16 @@ Then set the row in your profile patch:
 | `owner` | The person id when no mapping is set (a DSH only one person uses). |
 | `maxClipMB` | The largest recording the page accepts (60). |
 
-A person's learner folder is `<root>/<learner id>`. Someone with no practice data sees an empty state with a button to ask the assistant to set it up; nothing is created by opening the page.
+`root` is required (or `PRACTICE_ROOT` in DSH's environment). Without it the plugin serves nothing: the sidebar entry reads `panel` and the page fails to load, with `no practice root` in the DSH log. The `practice` command is looked up on DSH's `PATH` plus `~/.local/bin`, where `uv tool install` puts it; a command elsewhere takes its full path in `command`.
+
+A person's learner folder is `<root>/<learner id>`. Someone with no practice data sees an empty state with a button to ask the assistant to set it up; nothing is created by opening the page. Without an assistant, make the folder yourself. On a DSH only you use the learner is `owner` (the `owner` setting); for the example above:
+
+```sh
+export PRACTICE_ROOT=~/data/practice
+practice --learner owner --lang en init --exam celpip --target 9 --minutes 20
+```
+
+and the page shows today's plan. `practice init --help` lists the exams and options.
 
 ## Recording
 

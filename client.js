@@ -70,7 +70,7 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         if (!ready) return undefined
         let live = true
-        load().then(module => { if (live) setPage(module) }, reason => { modules = undefined; if (live) setError(reason.message) })
+        load().then(module => { if (live) setPage(module) }, reason => { modules = undefined; if (live) setError(`${reason.message}. If the plugin was just installed: with no \`root\` on its \`practice\` row (and no PRACTICE_ROOT) it serves nothing; see its README.`) })
         return () => { live = false }
       }, [ready])
       return h('div', { className: 'pr-root' },
