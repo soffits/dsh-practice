@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6
+
+- The sidebar entry keeps its label ("Practice") when the plugin serves nothing else: the page's words are now served even with no `root` set, where before the entry showed the bare key `panel`.
+- When the page can't load (no `root`, so none of its files are served), it says so and points at the README instead of a bare "Something went wrong".
+
 ## 0.2.5
 
 - The page pieces and shared helpers now come from `@soffits/dsh-plugin-sdk`, which replaced `@soffits/dsh-ui-kit`, `@soffits/dsh-ui-actions` and `@soffits/dsh-host-kit`; the page asks the profile for that package first. Install `@soffits/dsh-plugin-sdk` in the profile alongside this plugin.

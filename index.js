@@ -16,7 +16,7 @@ import { createJobs, personHash } from './src/jobs.js'
 import { wordsIn } from './src/locales.js'
 import { createPeople, expandHome, personKey } from './src/people.js'
 import { createPractice } from './src/practice.js'
-import { createRoutes } from './src/routes.js'
+import { createRoutes, wordsRoute } from './src/routes.js'
 import { webRoutes } from './src/web.js'
 
 export const name = 'dsh-practice'
@@ -51,6 +51,9 @@ export function apply(ctx, config) {
     const expanded = expandHome(path, home)
     return isAbsolute(expanded) ? expanded : resolve(expanded)
   }
+  // The words come first and need nothing else: without a root the sidebar entry still has its label, and its page says why it is empty.
+  const strings = wordsIn(fileURLToPath(new URL('./locale/', import.meta.url)))
+  ctx.connection.fetch.register(wordsRoute({ strings, log: error => logger.warn(error.message) }))
   const root = absolute(config.root || process.env.PRACTICE_ROOT || '')
   if (root === '' || root === resolve('')) {
     logger.warn('no practice root: set `root` (or PRACTICE_ROOT); the page stays empty')
@@ -68,7 +71,6 @@ export function apply(ctx, config) {
   const lower = map => Object.fromEntries(Object.entries(map ?? {}).map(([key, value]) => [personKey(key), value]))
   const routes = createRoutes({
     practice, jobs, changes, people,
-    strings: wordsIn(fileURLToPath(new URL('./locale/', import.meta.url))),
     identity: () => ctx.get('requestIdentity'),
     settings: { owner: personKey(config.owner || 'owner'), learners: lower(config.learners) },
     maxClipBytes: (config.maxClipMB ?? 60) * 1024 * 1024,
