@@ -1,16 +1,18 @@
 version: 2
+multi-ecosystem-groups:
+  all:
+    schedule:
+      interval: monthly
 updates:
   - package-ecosystem: npm
     directory: /
-    schedule:
-      interval: weekly
-    groups:
-      npm:
-        patterns: ["*"]
+    patterns: ["*"]
+    multi-ecosystem-group: all
+    commit-message:
+      prefix: "build(deps)"
   - package-ecosystem: github-actions
     directory: /
-    schedule:
-      interval: weekly
-    groups:
-      actions:
-        patterns: ["*"]
+    patterns: ["*"]
+    multi-ecosystem-group: all
+    commit-message:
+      prefix: "build(deps)"
