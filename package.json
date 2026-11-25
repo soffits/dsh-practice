@@ -1,6 +1,6 @@
 {
   "name": "@soffits/dsh-practice",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A language-practice page for DeepSeek Harness: today's plan, due review cards, a speaking recorder whose clips go to speech analysis, writing answers, session finish and progress, over the `practice` command line.",
   "type": "module",
   "license": "MIT",
@@ -52,8 +52,7 @@
       "immediately": true,
       "inject": [
         "@deepseek-ai/dsh-client-locale",
-        "@soffits/dsh-ui-actions",
-        "@soffits/dsh-ui-kit",
+        "@soffits/dsh-plugin-sdk",
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-sidebar",
         "@deepseek-ai/dsh-client-ui-workspace"

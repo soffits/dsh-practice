@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- The page pieces and shared helpers now come from `@soffits/dsh-plugin-sdk`, which replaced `@soffits/dsh-ui-kit`, `@soffits/dsh-ui-actions` and `@soffits/dsh-host-kit`; the page asks the profile for that package first. Install `@soffits/dsh-plugin-sdk` in the profile alongside this plugin.
+
 ## 0.2.4
 
 The folder watchers close when the plugin is unloaded or reloaded; before, each reload left them running.

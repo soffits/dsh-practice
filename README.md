@@ -17,7 +17,7 @@ The plugin needs the `practice` command on the machine DSH runs on. It lives in 
 uv tool install git+https://github.com/soffits/language-practice
 ```
 
-That is enough for planning, writing practice and review cards. For voice answers also install [speech-check](https://github.com/soffits/speech-check) (`uv tool install git+https://github.com/soffits/speech-check`, then `speech-check setup` to download its models). If you have your own command that speaks the same interface, point `command` at it (see the settings below). It also needs DSH with [@soffits/dsh-ui-kit](https://github.com/soffits/dsh-ui-kit) and [@soffits/dsh-ui-actions](https://github.com/soffits/dsh-ui-actions) (the "Ask" buttons are hidden without the second). For several people, a sign-in plugin that provides `requestIdentity` (such as [@soffits/dsh-oidc](https://github.com/soffits/dsh-oidc)).
+That is enough for planning, writing practice and review cards. For voice answers also install [speech-check](https://github.com/soffits/speech-check) (`uv tool install git+https://github.com/soffits/speech-check`, then `speech-check setup` to download its models). If you have your own command that speaks the same interface, point `command` at it (see the settings below). It also needs DSH with [@soffits/dsh-plugin-sdk](https://github.com/soffits/dsh-ui-kit) and [@soffits/dsh-plugin-sdk](https://github.com/soffits/dsh-ui-actions) (the "Ask" buttons are hidden without the second). For several people, a sign-in plugin that provides `requestIdentity` (such as [@soffits/dsh-oidc](https://github.com/soffits/dsh-oidc)).
 
 ```sh
 dsh plugin --profile web add @soffits/dsh-practice
