@@ -39,6 +39,24 @@ const REVIEW_BATCH = 40
 const SKILLS = ['listening', 'reading', 'writing', 'speaking']
 
 /**
+ * The page's words, read from the folder on every call. They don't depend on the practice root, so they are served
+ * even when the rest is not (the sidebar entry then still has its label).
+ * @param {object} o
+ * @param {() => Promise<object>} o.strings
+ * @param {(error: Error) => void} [o.log]
+ */
+export function wordsRoute({ strings, log }) {
+  return get(`${PREFIX}/words`, async () => {
+    try {
+      return json(200, { tables: await strings() }, { 'cache-control': 'private, no-cache' })
+    } catch (error) {
+      log?.(error)
+      return json(500, { error: 'The words are not available.' })
+    }
+  })
+}
+
+/**
  * @param {object} o
  * @param {ReturnType<import('./practice.js').createPractice>} o.practice
  * @param {ReturnType<import('./jobs.js').createJobs>} o.jobs
@@ -46,11 +64,10 @@ const SKILLS = ['listening', 'reading', 'writing', 'speaking']
  * @param {ReturnType<import('./people.js').createPeople>} o.people
  * @param {() => any} o.identity - the requestIdentity service now, if any
  * @param {{ owner: string, learners: Record<string, string> }} o.settings
- * @param {() => Promise<object>} o.strings
  * @param {number} o.maxClipBytes
  * @param {(error: Error) => void} [o.log]
  */
-export function createRoutes({ practice, jobs, changes, people, identity, settings, strings, maxClipBytes, log }) {
+export function createRoutes({ practice, jobs, changes, people, identity, settings, maxClipBytes, log }) {
   const secured = (fn, options) => guard({ people, identity, settings, log }, fn, options)
   const empty = viewer => ({ me: { person: viewer.person, name: viewer.name }, learner: null })
   const call = (viewer, lang, args) => practice.run(viewer.learner, ['--lang', lang, ...args])
@@ -224,15 +241,6 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
     return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'private, no-cache, no-transform', 'x-accel-buffering': 'no', 'x-content-type-options': 'nosniff' } })
   })
 
-  const words = async () => {
-    try {
-      return json(200, { tables: await strings() }, { 'cache-control': 'private, no-cache' })
-    } catch (error) {
-      log?.(error)
-      return json(500, { error: 'The words are not available.' })
-    }
-  }
-
   const streaming = (path, fetch) => ({ path, methods: ['POST'], requestBody: 'streaming', fetch })
   return [
     get(`${PREFIX}/state`, state),
@@ -255,6 +263,5 @@ export function createRoutes({ practice, jobs, changes, people, identity, settin
     get(`${PREFIX}/attempt/clip`, play),
     post(`${PREFIX}/job/dismiss`, dismiss),
     get(`${PREFIX}/events`, events),
-    get(`${PREFIX}/words`, words),
   ]
 }

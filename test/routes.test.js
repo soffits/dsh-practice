@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { createChanges } from '../src/changes.js'
 import { createJobs } from '../src/jobs.js'
 import { createPeople } from '../src/people.js'
-import { createRoutes } from '../src/routes.js'
+import { createRoutes, wordsRoute } from '../src/routes.js'
 import { fakePractice, until } from './helpers.js'
 
 const BASE = 'https://dsh.example/api/practice'
@@ -21,10 +21,9 @@ async function setup({ env, maxClipBytes = 1024 * 1024, who = 'sub-ana' } = {}) 
     practice: fake.practice, jobs, changes, people,
     identity: () => ({ current: () => (current.who === null ? null : { id: current.who }) }),
     settings: { owner: 'owner', learners: {} },
-    strings: async () => ({ en: { title: 'x' } }),
     maxClipBytes,
   })
-  const by = Object.fromEntries(routes.map(route => [`${route.methods[0]} ${route.path.replace('/api/practice', '')}`, route]))
+  const by = Object.fromEntries([...routes, wordsRoute({ strings: async () => ({ en: { title: 'x' } }) })].map(route => [`${route.methods[0]} ${route.path.replace('/api/practice', '')}`, route]))
   const call = async (key, { query = '', json, body, headers = {} } = {}) => {
     const route = by[key]
     assert.ok(route, key)
